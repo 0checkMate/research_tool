@@ -187,10 +187,10 @@ Configure logging before calling the pipeline, otherwise informational messages 
 - [x] Robots-aware parallel scraper
 - [x] Writer and critic LCEL chains with structured critique
 - [x] Bounded revision loop, logging and retry handling
-- [ ] FastAPI backend (validated request, typed response, CORS, health check)
-- [ ] Web frontend
-- [ ] Deployment on Render (API as web service, frontend as static site)
-- [ ] Per-client rate limiting to protect API quota in production
+- [x] FastAPI backend (validated request, typed response, CORS, health check)
+- [x] Web frontend
+- [x] Deployment on Render (API as web service, frontend as static site)
+- [x] Per-client rate limiting to protect API quota in production
 
 ## License
 
