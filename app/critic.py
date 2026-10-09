@@ -1,0 +1,1 @@
+# Critic for evaluating the quality of generated content

@@ -1,0 +1,1 @@
+# Writer for generating text based on web scraper content
