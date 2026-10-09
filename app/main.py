@@ -1,8 +1,10 @@
 
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
 
 from app.config import LLM_MODEL, validate_settings
 from app.pipeline import run_pipeline
@@ -47,3 +49,10 @@ def search(request: SearchRequest):
             status_code=502,
             detail='The research pipeline failed. Please try again later.',
         )
+
+STATIC_DIR = Path(__file__).resolve().parent.parent / 'static'
+
+
+@app.get('/', include_in_schema=False)
+def index() -> FileResponse:
+    return FileResponse(STATIC_DIR / 'index.html')

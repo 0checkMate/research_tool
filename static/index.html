@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+  <meta charset='utf-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1'>
+  <title>Research Tool</title>
+  <style>
+        :root {
+      --bg: #a8c0df;
+      --card: #ffffff;
+      --text: #9eafc7;
+      --muted: #5d6b7c;
+      --border: #e2e6ec;
+      --accent: #1f6feb;
+      --accent-hover: #1858bd;
+      --error: #b00020;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f141a;
+        --card: #18202a;
+        --text: #e8edf3;
+        --muted: #9aa7b6;
+        --border: #2a3441;
+        --accent: #4c8dff;
+        --accent-hover: #6aa0ff;
+        --error: #ff6b81;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+    }
+    header { text-align: center; padding: 3rem 1rem 1.5rem; }
+    header h1 { margin: 0; font-size: 2rem; }
+    header p { margin: 0.5rem 0 0; color: var(--muted); }
+    main { max-width: 760px; margin: 0 auto; padding: 0 1rem 2rem; }
+    .card, #result {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    }
+    .search-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+    input {
+      flex: 1 1 260px;
+      padding: 0.8rem 1rem;
+      font-size: 1rem;
+      color: var(--text);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+    input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+    button {
+      padding: 0.8rem 1.6rem;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #ffffff;
+      background: var(--accent);
+      border: 0;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button:hover:not(:disabled) { background: var(--accent-hover); }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    #status { margin: 1rem 0 0; color: var(--muted); font-size: 0.95rem; min-height: 1.4em; }
+    #status.error { color: var(--error); font-weight: 600; }
+    #result { margin-top: 1rem; }
+    #result:empty { display: none; }
+    #answer { white-space: pre-wrap; }
+    #result ol {
+      margin: 1.25rem 0 0;
+      padding: 1rem 0 0 1.4rem;
+      border-top: 1px solid var(--border);
+    }
+    #result ol::before {
+      content: 'Sources';
+      display: block;
+      margin-left: -1.4rem;
+      margin-bottom: 0.4rem;
+      font-weight: 600;
+    }
+    #result a { color: var(--accent); }
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.85rem;
+      padding: 0 1rem 2rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Research Tool</h1>
+    <p>Ask a question and receive a cited answer drawn from live web sources.</p>
+  </header>
+  <main>
+    <section class='card'>
+      <div class='search-row'>
+        <input id='question' type='text' maxlength='300' placeholder='Ask a research question' aria-label='Research question'>
+        <button id='go'>Search</button>
+      </div>
+      <p id='status'></p>
+    </section>
+    <div id='result'></div>
+  </main>
+  <footer>
+    Answers are generated automatically from public web pages and may contain errors. Verify important claims against the sources.
+  </footer>
+
+  <script>
+    const questionEl = document.getElementById('question');
+    const goEl = document.getElementById('go');
+    const statusEl = document.getElementById('status');
+    const resultEl = document.getElementById('result');
+
+    async function search() {
+      const question = questionEl.value.trim();
+      resultEl.textContent = '';
+      statusEl.className = '';
+      statusEl.textContent = 'Researching. This takes about a minute...';
+      goEl.disabled = true;
+
+      try {
+        const res = await fetch('/search', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question }),
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          statusEl.className = 'error';
+          statusEl.textContent = typeof data.detail === 'string'
+            ? data.detail
+            : 'Please enter a question of 3 to 300 characters.';
+          return;
+        }
+
+        statusEl.textContent = `Verdict: ${data.verdict} | Revisions: ${data.revisions} | ${data.elapsed_seconds} s`;
+
+        const answer = document.createElement('div');
+        answer.id = 'answer';
+        answer.textContent = data.answer;
+        resultEl.appendChild(answer);
+
+        const list = document.createElement('ol');
+        for (const source of data.sources) {
+          const item = document.createElement('li');
+          if (source.url.startsWith('http')) {
+            const link = document.createElement('a');
+            link.href = source.url;
+            link.textContent = source.title || source.url;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            item.appendChild(link);
+          } else {
+            item.textContent = source.title;
+          }
+          list.appendChild(item);
+        }
+        resultEl.appendChild(list);
+      } catch (err) {
+        statusEl.className = 'error';
+        statusEl.textContent = 'Could not reach the server. Please try again.';
+      } finally {
+        goEl.disabled = false;
+      }
+    }
+
+    goEl.addEventListener('click', search);
+        questionEl.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' && !goEl.disabled) search();
+    });
+  </script>
+</body>
+</html>
