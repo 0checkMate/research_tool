@@ -1,6 +1,6 @@
 
 from typing import Literal
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 # SearchResult schema for the search results returned by the search engine.
 class SearchResult(BaseModel):
@@ -28,3 +28,29 @@ class Critique(BaseModel):
     feedback: str = Field(
         description='concise, actionable instructions for the writer to fix the issues; empty if approved'
     )
+
+# SearchRequest schema for the request to search and answer a question. from server
+class SearchRequest(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    question: str = Field(
+        min_length=3,
+        max_length=300,
+        description='The research question to answer from live web sources.',
+    )
+
+
+class SourceInfo(BaseModel):
+    title: str
+    url: str
+    scraped: bool
+
+
+class SearchResponse(BaseModel):
+    question: str
+    answer: str
+    verdict: Literal['approve', 'revise', 'no_sources']
+    remaining_issues: list[str]
+    revisions: int
+    sources: list[SourceInfo]
+    elapsed_seconds: float
