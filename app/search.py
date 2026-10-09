@@ -1,11 +1,14 @@
+from urllib.parse import urldefrag
+
 from tavily import TavilyClient
 from tenacity import retry, stop_after_attempt, wait_exponential
-from urllib.parse import urldefrag
 
 from app.config import TAVILY_API_KEY
 from app.schemas import SearchResult
 
+
 client = TavilyClient(api_key=TAVILY_API_KEY)
+
 
 @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=10), reraise=True)
 def search_web(query: str, max_results: int = 5) -> list[SearchResult]:
